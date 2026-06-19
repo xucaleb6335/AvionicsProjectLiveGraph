@@ -1,6 +1,6 @@
-package com.kagenou.Avionics.hud;
+package com.kagenou.avionics.hud;
 
-import com.kagenou.Avionics.scene.Palette;
+import com.kagenou.avionics.scene.Palette;
 
 import static org.lwjgl.opengl.GL11.*;
 

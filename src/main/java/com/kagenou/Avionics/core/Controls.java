@@ -1,4 +1,4 @@
-package com.kagenou.Avionics;
+package com.kagenou.avionics.core;
 
 /**
  * Mutable UI/interaction state shared between the GLFW key callback and the render
@@ -19,4 +19,9 @@ public final class Controls {
 
     public boolean recenterRequested = false;     // zero attitude to the current pose
     public boolean toggleSourceRequested = false; // switch mock <-> live
+
+    // Mouse state in HUD/ortho pixel coords (for sliders + preset buttons).
+    public float mouseX, mouseY;
+    public boolean mouseDown;          // left button currently held
+    public boolean mousePressedEdge;   // left button went down this frame
 }

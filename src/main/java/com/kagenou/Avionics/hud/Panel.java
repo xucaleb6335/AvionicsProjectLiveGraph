@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.hud;
+package com.kagenou.avionics.hud;
 
 import static org.lwjgl.opengl.GL11.*;
 

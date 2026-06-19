@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.scene;
+package com.kagenou.avionics.scene;
 
 /**
  * Cohesive dark-theme palette for the scene, matching the look of the reference

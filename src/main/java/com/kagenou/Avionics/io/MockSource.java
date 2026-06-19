@@ -1,6 +1,6 @@
-package com.kagenou.Avionics.io;
+package com.kagenou.avionics.io;
 
-import com.kagenou.Avionics.math.Quaternion;
+import com.kagenou.avionics.math.Quaternion;
 
 /**
  * Synthetic attitude feed for developing and verifying the visualizer without

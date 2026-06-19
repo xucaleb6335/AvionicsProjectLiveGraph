@@ -1,6 +1,6 @@
-package com.kagenou.Avionics.sim;
+package com.kagenou.avionics.sim;
 
-import com.kagenou.Avionics.math.Quaternion;
+import com.kagenou.avionics.math.Quaternion;
 
 /**
  * Rigid-body rotational dynamics of an X-configuration quadcopter.

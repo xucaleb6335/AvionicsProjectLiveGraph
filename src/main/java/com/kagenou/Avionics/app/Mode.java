@@ -1,7 +1,7 @@
-package com.kagenou.Avionics.app;
+package com.kagenou.avionics.app;
 
-import com.kagenou.Avionics.math.Quaternion;
-import com.kagenou.Avionics.sim.SimStatus;
+import com.kagenou.avionics.math.Quaternion;
+import com.kagenou.avionics.sim.SimStatus;
 
 /**
  * A selectable application mode. The render loop drives the active mode and reuses

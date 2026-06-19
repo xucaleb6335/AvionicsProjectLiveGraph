@@ -1,6 +1,6 @@
-package com.kagenou.Avionics.sim;
+package com.kagenou.avionics.sim;
 
-import com.kagenou.Avionics.math.Quaternion;
+import com.kagenou.avionics.math.Quaternion;
 
 /**
  * Cascaded attitude controller, the structure used by real flight controllers

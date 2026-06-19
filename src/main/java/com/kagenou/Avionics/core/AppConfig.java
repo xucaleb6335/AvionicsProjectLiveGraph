@@ -1,4 +1,4 @@
-package com.kagenou.Avionics;
+package com.kagenou.avionics.core;
 
 /**
  * Central, immutable app configuration so nothing (window size, port, baud,

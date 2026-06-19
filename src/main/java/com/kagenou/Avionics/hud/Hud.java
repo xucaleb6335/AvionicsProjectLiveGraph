@@ -1,10 +1,11 @@
-package com.kagenou.Avionics.hud;
+package com.kagenou.avionics.hud;
 
-import com.kagenou.Avionics.Controls;
-import com.kagenou.Avionics.io.AttitudeState;
-import com.kagenou.Avionics.math.Quaternion;
-import com.kagenou.Avionics.scene.Palette;
-import com.kagenou.Avionics.sim.SimStatus;
+import com.kagenou.avionics.core.Controls;
+import com.kagenou.avionics.io.AttitudeState;
+import com.kagenou.avionics.math.Quaternion;
+import com.kagenou.avionics.scene.Palette;
+import com.kagenou.avionics.sim.SimStatus;
+import com.kagenou.avionics.sim.Simulator;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -17,6 +18,7 @@ import static org.lwjgl.opengl.GL11.*;
 public final class Hud {
     private final TextRenderer text = new TextRenderer();
     private final TimeSeriesGraph graph = new TimeSeriesGraph();
+    private int draggingGain = -1; // gain slider currently being dragged, or -1
 
     // Rolling link-rate estimate (samples/sec) from the parse-OK counter.
     private long lastRateNanos = System.nanoTime();
@@ -55,7 +57,11 @@ public final class Hud {
     }
 
     public void draw(int w, int h, AttitudeState state, Quaternion displayed, double fps,
-                     String modeName, String bannerText, float[] bannerColor, SimStatus sim, Controls c) {
+                     String modeName, String bannerText, float[] bannerColor,
+                     SimStatus sim, Simulator simCtl, Controls c) {
+        if (!c.mouseDown) {
+            draggingGain = -1; // release ends any slider drag
+        }
         updateLinkRate(state);
         beginOrtho(w, h);
 
@@ -66,10 +72,13 @@ public final class Hud {
         }
         if (c.showDiagnostics) {
             if (sim != null) {
-                drawSimPanel(12, topY, sim);
+                drawSimPanel(12, topY, sim, simCtl, c);
             } else {
                 drawDiagnosticsPanel(12, topY, state, fps);
             }
+        }
+        if (sim != null) {
+            drawPresetsPanel(w, sim, simCtl, c);
         }
         if (c.showGraph) {
             float gh = 180, bottomMargin = c.showHints ? 32 : 8;
@@ -145,8 +154,8 @@ public final class Hud {
         text.draw(tx, ty, s, Palette.TEXT, 1f, String.format("render  %.0f fps", fps));
     }
 
-    private void drawSimPanel(float x, float y, SimStatus s) {
-        float w = 256, pad = 12, lh = 16, sVal = 1.45f, h = 336;
+    private void drawSimPanel(float x, float y, SimStatus s, Simulator simCtl, Controls c) {
+        float w = 256, pad = 12, lh = 16, sVal = 1.45f, h = 360;
         Panel.draw(x, y, w, h, Palette.PANEL_BG, 0.82f, Palette.PANEL_BORDER, 0.55f);
 
         float tx = x + pad, ty = y + pad;
@@ -161,12 +170,7 @@ public final class Hud {
             Panel.draw(bx, ty, bw, bh, Palette.PANEL_BORDER, 0.25f, null, 0);
             float[] col = frac > 0.9f ? Palette.ACCENT_RED : frac > 0.7f ? Palette.ACCENT_AMBER : Palette.ACCENT_GREEN;
             glColor4f(col[0], col[1], col[2], 0.9f);
-            glBegin(GL_QUADS);
-            glVertex2f(bx, ty);
-            glVertex2f(bx + bw * frac, ty);
-            glVertex2f(bx + bw * frac, ty + bh);
-            glVertex2f(bx, ty + bh);
-            glEnd();
+            fillRect(bx, ty, bw * frac, bh);
             text.draw(bx + bw + 8, ty, 1.25f, Palette.TEXT_DIM, 1f, String.format("%.2f", frac));
             ty += 16;
         }
@@ -180,16 +184,12 @@ public final class Hud {
         text.draw(tx, ty, sVal, Palette.TEXT, 1f, String.format("alt  %.2f / %.2f m", s.altitude(), s.altSetpoint()));
         ty += lh + 4;
 
-        text.draw(tx, ty, 1.2f, Palette.TEXT_DIM, 1f, "GAINS  ( [ ] select  - = adjust )");
-        ty += 15;
+        text.draw(tx, ty, 1.2f, Palette.TEXT_DIM, 1f, "GAINS  (drag sliders)");
+        ty += 16;
         for (int i = 0; i < s.gainNames().length; i++) {
-            boolean sel = i == s.selectedGain();
-            float[] col = sel ? Palette.ACCENT_GREEN : Palette.TEXT;
-            String marker = sel ? ">" : " ";
-            text.draw(tx, ty, 1.4f, col, 1f, String.format("%s %-8s %.4f", marker, s.gainNames()[i], s.gainValues()[i]));
-            ty += 15;
+            ty = drawGainSlider(i, tx, ty, s, simCtl, c);
         }
-        ty += 4;
+        ty += 2;
 
         text.draw(tx, ty, 1.2f, Palette.TEXT_DIM, 1f, "STEP (T)");
         if (s.stepActive()) {
@@ -200,9 +200,77 @@ public final class Hud {
             text.draw(tx + 72, ty, 1.3f, Palette.TEXT_DIM, 1f, "press T");
         }
         ty += 16;
-        text.draw(tx, ty, 1.05f, Palette.TEXT_DIM, 1f, "arrows tilt  W/S alt  Q/E yaw  T step");
-        ty += 13;
-        text.draw(tx, ty, 1.05f, Palette.TEXT_DIM, 1f, "Z gust  N noise  P export  R reset");
+        text.draw(tx, ty, 1.05f, Palette.TEXT_DIM, 1f, "arrows tilt  W/S alt  Q/E yaw  T step  Z gust");
+    }
+
+    /** Draws one gain as a mouse-draggable slider and returns the next y. */
+    private float drawGainSlider(int i, float x, float y, SimStatus s, Simulator simCtl, Controls c) {
+        float rowH = 20;
+        float gmin = s.gainMin()[i], gmax = s.gainMax()[i];
+        float val = simCtl != null ? simCtl.gainValue(i) : s.gainValues()[i];
+
+        float trackX = x + 56, trackW = 104, trackY = y + 7, trackH = 4;
+
+        boolean over = c.mouseX >= trackX - 7 && c.mouseX <= trackX + trackW + 7
+                && c.mouseY >= y - 1 && c.mouseY <= y + rowH - 2;
+        if (simCtl != null) {
+            if (c.mousePressedEdge && over) {
+                draggingGain = i;
+            }
+            if (draggingGain == i && c.mouseDown) {
+                float f = clamp01((c.mouseX - trackX) / trackW);
+                simCtl.setGain(i, gmin + f * (gmax - gmin));
+                val = simCtl.gainValue(i);
+            }
+        }
+        float frac = gmax > gmin ? clamp01((val - gmin) / (gmax - gmin)) : 0f;
+        boolean active = i == s.selectedGain() || draggingGain == i;
+        float[] accent = active ? Palette.ACCENT_GREEN : Palette.TEXT;
+
+        text.draw(x, y + 2, 1.2f, active ? Palette.ACCENT_GREEN : Palette.TEXT_DIM, 1f, s.gainNames()[i]);
+        glColor4f(Palette.PANEL_BORDER[0], Palette.PANEL_BORDER[1], Palette.PANEL_BORDER[2], 0.5f);
+        fillRect(trackX, trackY, trackW, trackH);
+        glColor4f(accent[0], accent[1], accent[2], 0.55f);
+        fillRect(trackX, trackY, trackW * frac, trackH);
+        float handleX = trackX + trackW * frac;
+        glColor4f(accent[0], accent[1], accent[2], 1f);
+        fillRect(handleX - 3, y + 1, 6, rowH - 4);
+        text.draw(trackX + trackW + 10, y + 2, 1.1f, Palette.TEXT, 1f, String.format("%.4f", val));
+
+        return y + rowH;
+    }
+
+    private void drawPresetsPanel(int w, SimStatus s, Simulator simCtl, Controls c) {
+        String[] names = s.presetNames();
+        float pad = 10, pw = 168, x = w - pw - 12, y = 46, rowH = 26, headerH = 24;
+        float h = headerH + names.length * rowH + 8;
+        Panel.draw(x, y, pw, h, Palette.PANEL_BG, 0.82f, Palette.PANEL_BORDER, 0.55f);
+        text.draw(x + pad, y + 8, 1.4f, Palette.TEXT_DIM, 1f, "PRESETS  (click)");
+
+        float by = y + headerH;
+        for (int i = 0; i < names.length; i++) {
+            float bx = x + pad, bw = pw - 2 * pad, bh = rowH - 5;
+            boolean sel = i == s.currentPreset();
+            boolean over = c.mouseX >= bx && c.mouseX <= bx + bw && c.mouseY >= by && c.mouseY <= by + bh;
+            float[] fill = sel ? Palette.ACCENT_GREEN : Palette.PANEL_BORDER;
+            float fa = sel ? 0.28f : (over ? 0.35f : 0.12f);
+            float[] border = sel ? Palette.ACCENT_GREEN : Palette.PANEL_BORDER;
+            Panel.draw(bx, by, bw, bh, fill, fa, border, sel ? 0.9f : 0.4f);
+            text.draw(bx + 8, by + 5, 1.3f, sel ? Palette.ACCENT_GREEN : Palette.TEXT, 1f, names[i]);
+            if (simCtl != null && c.mousePressedEdge && over) {
+                simCtl.applyPreset(i);
+            }
+            by += rowH;
+        }
+    }
+
+    private static void fillRect(float x, float y, float w, float h) {
+        glBegin(GL_QUADS);
+        glVertex2f(x, y);
+        glVertex2f(x + w, y);
+        glVertex2f(x + w, y + h);
+        glVertex2f(x, y + h);
+        glEnd();
     }
 
     private static float clamp01(float v) {

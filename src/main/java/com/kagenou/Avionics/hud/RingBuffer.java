@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.hud;
+package com.kagenou.avionics.hud;
 
 /**
  * Fixed-capacity circular buffer of timestamped float samples for one plot

@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.scene;
+package com.kagenou.avionics.scene;
 
 import static org.lwjgl.opengl.GL11.*;
 

@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.sim;
+package com.kagenou.avionics.sim;
 
 /**
  * Online step-response analysis for one channel, the in-sim equivalent of MATLAB's

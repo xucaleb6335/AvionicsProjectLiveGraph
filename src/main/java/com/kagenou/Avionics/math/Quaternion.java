@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.math;
+package com.kagenou.avionics.math;
 
 /**
  * Minimal quaternion used for IMU attitude.

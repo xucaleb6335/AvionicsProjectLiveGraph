@@ -1,4 +1,4 @@
-package com.kagenou.Avionics;
+package com.kagenou.avionics.scene;
 import static org.lwjgl.opengl.GL11.*;
 public class Cube {
     //12 triangles, 2 for each face

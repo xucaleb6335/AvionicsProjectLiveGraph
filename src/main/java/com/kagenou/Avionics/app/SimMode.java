@@ -1,9 +1,9 @@
-package com.kagenou.Avionics.app;
+package com.kagenou.avionics.app;
 
-import com.kagenou.Avionics.math.Quaternion;
-import com.kagenou.Avionics.scene.Palette;
-import com.kagenou.Avionics.sim.SimStatus;
-import com.kagenou.Avionics.sim.Simulator;
+import com.kagenou.avionics.math.Quaternion;
+import com.kagenou.avionics.scene.Palette;
+import com.kagenou.avionics.sim.SimStatus;
+import com.kagenou.avionics.sim.Simulator;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -42,6 +42,11 @@ public final class SimMode implements Mode {
     @Override
     public SimStatus simStatus() {
         return sim.status(selectedGain);
+    }
+
+    /** Exposes the simulator so the HUD can drive sliders and presets directly. */
+    public Simulator simulator() {
+        return sim;
     }
 
     @Override

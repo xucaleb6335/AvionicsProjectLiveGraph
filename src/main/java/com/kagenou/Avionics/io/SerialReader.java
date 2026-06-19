@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.io;
+package com.kagenou.avionics.io;
 
 import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortEvent;

@@ -1,4 +1,4 @@
-package com.kagenou.Avionics;
+package com.kagenou.avionics.core;
 
 import org.lwjgl.opengl.GL;
 

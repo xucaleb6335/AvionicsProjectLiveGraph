@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.sim;
+package com.kagenou.avionics.sim;
 
 /**
  * One-axis PID controller sized for a flight inner loop:

@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.io;
+package com.kagenou.avionics.io;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;

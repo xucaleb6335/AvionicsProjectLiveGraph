@@ -1,14 +1,19 @@
-package com.kagenou.Avionics;
+package com.kagenou.avionics;
 
-import com.kagenou.Avionics.app.LiveMode;
-import com.kagenou.Avionics.app.Mode;
-import com.kagenou.Avionics.app.SimMode;
-import com.kagenou.Avionics.hud.Hud;
-import com.kagenou.Avionics.io.AttitudeState;
-import com.kagenou.Avionics.math.Quaternion;
-import com.kagenou.Avionics.scene.Background;
-import com.kagenou.Avionics.scene.Drone;
-import com.kagenou.Avionics.scene.Ground;
+import com.kagenou.avionics.app.LiveMode;
+import com.kagenou.avionics.app.Mode;
+import com.kagenou.avionics.app.SimMode;
+import com.kagenou.avionics.core.AppConfig;
+import com.kagenou.avionics.core.Controls;
+import com.kagenou.avionics.core.Engine;
+import com.kagenou.avionics.hud.Hud;
+import com.kagenou.avionics.io.AttitudeState;
+import com.kagenou.avionics.math.Quaternion;
+import com.kagenou.avionics.scene.Background;
+import com.kagenou.avionics.scene.Cube;
+import com.kagenou.avionics.scene.Drone;
+import com.kagenou.avionics.scene.Ground;
+import com.kagenou.avionics.sim.Simulator;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -44,7 +49,19 @@ public class Main {
             double frameDt = (nowNanos - lastFrameNanos) / 1e9;
             lastFrameNanos = nowNanos;
 
+            // Poll the mouse, scaled into HUD/framebuffer coords, for sliders + presets.
+            double[] cx = {0}, cy = {0};
+            glfwGetCursorPos(engine.window(), cx, cy);
+            int[] ww = {0}, wh = {0};
+            glfwGetWindowSize(engine.window(), ww, wh);
+            controls.mouseX = (float) (cx[0] * (ww[0] > 0 ? (double) engine.fbWidth() / ww[0] : 1));
+            controls.mouseY = (float) (cy[0] * (wh[0] > 0 ? (double) engine.fbHeight() / wh[0] : 1));
+            boolean mdown = glfwGetMouseButton(engine.window(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+            controls.mousePressedEdge = mdown && !controls.mouseDown;
+            controls.mouseDown = mdown;
+
             Mode active = modes[mode[0]];
+            Simulator simCtl = active instanceof SimMode sm ? sm.simulator() : null;
             if (!controls.paused) {
                 active.update(frameDt);
             }
@@ -83,7 +100,7 @@ public class Main {
 
             if (controls.showHud) {
                 hud.draw(engine.fbWidth(), engine.fbHeight(), state, displayed, fps,
-                        active.name(), active.bannerText(), active.bannerColor(), active.simStatus(), controls);
+                        active.name(), active.bannerText(), active.bannerColor(), active.simStatus(), simCtl, controls);
             }
 
             engine.endFrame();
@@ -133,5 +150,6 @@ public class Main {
         System.out.println("Java: global - H hud | 1 attitude | 2 panel | 3 graph | 4 hints | C drone/cube | G grid | Space pause | Esc quit");
         System.out.println("Java: LIVE   - R recenter | M mock/live");
         System.out.println("Java: SIM    - arrows tilt | Q/E yaw | T roll-step | Z gust | 0 level | R reset | [ ] select gain | - = adjust");
+        System.out.println("Java: SIM    - mouse: drag gain sliders, click presets (Open Loop / P / PI / PD / Tuned / Oscillating / I Windup / Noisy D)");
     }
 }

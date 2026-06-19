@@ -1,12 +1,12 @@
-package com.kagenou.Avionics.app;
+package com.kagenou.avionics.app;
 
-import com.kagenou.Avionics.AppConfig;
-import com.kagenou.Avionics.io.AttitudeSource;
-import com.kagenou.Avionics.io.AttitudeState;
-import com.kagenou.Avionics.io.MockSource;
-import com.kagenou.Avionics.io.SerialReader;
-import com.kagenou.Avionics.math.Quaternion;
-import com.kagenou.Avionics.scene.Palette;
+import com.kagenou.avionics.core.AppConfig;
+import com.kagenou.avionics.io.AttitudeSource;
+import com.kagenou.avionics.io.AttitudeState;
+import com.kagenou.avionics.io.MockSource;
+import com.kagenou.avionics.io.SerialReader;
+import com.kagenou.avionics.math.Quaternion;
+import com.kagenou.avionics.scene.Palette;
 
 import static org.lwjgl.glfw.GLFW.*;
 

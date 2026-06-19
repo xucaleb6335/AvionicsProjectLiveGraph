@@ -1,6 +1,6 @@
-package com.kagenou.Avionics.sim;
+package com.kagenou.avionics.sim;
 
-import com.kagenou.Avionics.math.Quaternion;
+import com.kagenou.avionics.math.Quaternion;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,12 +38,31 @@ public final class Simulator {
     private float simTime;
     private int stepChannel;
     private boolean noise;
+    private int currentPreset = 4; // defaults equal the "Tuned PID" preset
 
     private static final float D2R = (float) (Math.PI / 180.0);
     private static final float R2D = (float) (180.0 / Math.PI);
 
     public static final String[] GAIN_NAMES = {"att Kp", "rate Kp", "rate Ki", "rate Kd", "yaw Kp", "alt Kp", "alt Kd"};
     private static final float[] GAIN_STEP = {0.5f, 0.01f, 0.005f, 0.0005f, 0.01f, 0.5f, 0.5f};
+    private static final float[] GAIN_MIN = {0f, 0f, 0f, 0f, 0f, 0f, 0f};
+    private static final float[] GAIN_MAX = {20f, 0.4f, 0.4f, 0.02f, 0.4f, 15f, 10f};
+
+    public static final String[] PRESET_NAMES = {
+            "Open Loop", "P Only", "PI", "PD", "Tuned PID", "Oscillating", "I Windup", "Noisy D"};
+    // Rows: {att Kp, rate Kp, rate Ki, rate Kd, yaw Kp, alt Kp, alt Kd}. Altitude is kept
+    // tuned in every preset except Open Loop so the demo isolates the attitude/rate loop.
+    private static final float[][] PRESET_GAINS = {
+            {0f,  0f,    0f,    0f,      0f,    0f, 0f},   // Open Loop  - no feedback
+            {6f,  0.10f, 0f,    0f,      0.12f, 5f, 3f},   // P Only     - steady-state error
+            {6f,  0.10f, 0.10f, 0f,      0.14f, 5f, 3f},   // PI         - no error, oscillatory
+            {7f,  0.11f, 0f,    0.0040f, 0.15f, 5f, 3f},   // PD         - damped, slight offset
+            {7f,  0.11f, 0.04f, 0.0028f, 0.16f, 5f, 3f},   // Tuned PID  - the good values
+            {20f, 0.12f, 0.03f, 0f,      0.20f, 5f, 3f},   // Oscillating- fast outer, slow inner, no D
+            {5f,  0.04f, 0.35f, 0f,      0.10f, 5f, 3f},   // I Windup   - dominant integral
+            {7f,  0.11f, 0.04f, 0.0150f, 0.16f, 5f, 3f},   // Noisy D    - high D + sensor noise
+    };
+    private static final boolean[] PRESET_NOISE = {false, false, false, false, false, false, false, true};
 
     public Simulator() {
         updateSetpoint();
@@ -186,8 +205,8 @@ public final class Simulator {
         };
     }
 
-    public void adjustGain(int i, int dir) {
-        float v = Math.max(0f, gainValue(i) + dir * GAIN_STEP[i]);
+    public void setGain(int i, float v) {
+        v = clamp(v, GAIN_MIN[i], GAIN_MAX[i]);
         switch (i) {
             case 0 -> fc.attKp = v;
             case 1 -> fc.rateKp = v;
@@ -198,6 +217,49 @@ public final class Simulator {
             case 6 -> altPid.kd = v;
             default -> { }
         }
+        currentPreset = -1; // manual change -> custom
+    }
+
+    public void adjustGain(int i, int dir) {
+        setGain(i, gainValue(i) + dir * GAIN_STEP[i]);
+    }
+
+    public float gainMin(int i) {
+        return GAIN_MIN[i];
+    }
+
+    public float gainMax(int i) {
+        return GAIN_MAX[i];
+    }
+
+    // --- presets ---
+
+    public String[] presetNames() {
+        return PRESET_NAMES;
+    }
+
+    public int currentPreset() {
+        return currentPreset;
+    }
+
+    /** Applies a named preset: sets all gains + noise and resets the integrators. */
+    public void applyPreset(int idx) {
+        if (idx < 0 || idx >= PRESET_GAINS.length) {
+            return;
+        }
+        float[] g = PRESET_GAINS[idx];
+        fc.attKp = g[0];
+        fc.rateKp = g[1];
+        fc.rateKi = g[2];
+        fc.rateKd = g[3];
+        fc.yawKp = g[4];
+        altPid.kp = g[5];
+        altPid.kd = g[6];
+        noise = PRESET_NOISE[idx];
+        fc.reset();
+        altPid.reset();
+        analyzer.clear();
+        currentPreset = idx;
     }
 
     public SimStatus status(int selectedGain) {
@@ -212,7 +274,8 @@ public final class Simulator {
                 new float[]{spRollDeg, spPitchDeg, spYawDeg},
                 e, rates, GAIN_NAMES, gains, selectedGain,
                 analyzer.isActive(), analyzer.riseMs(), analyzer.overshootPct(), analyzer.settleS(),
-                noise, quad.altitude(), altSetpoint);
+                noise, quad.altitude(), altSetpoint,
+                GAIN_MIN, GAIN_MAX, PRESET_NAMES, currentPreset);
     }
 
     private static float clamp(float v, float lo, float hi) {

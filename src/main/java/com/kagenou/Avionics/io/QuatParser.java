@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.io;
+package com.kagenou.avionics.io;
 
 /**
  * Parses one line of the IMU wire format into a quaternion.

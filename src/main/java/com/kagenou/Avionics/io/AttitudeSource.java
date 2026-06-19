@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.io;
+package com.kagenou.avionics.io;
 
 /**
  * A producer of attitude samples that feeds an {@link AttitudeState}. Implemented

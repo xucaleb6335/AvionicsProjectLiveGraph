@@ -1,4 +1,4 @@
-package com.kagenou.Avionics.sim;
+package com.kagenou.avionics.sim;
 
 /**
  * Immutable per-frame telemetry snapshot the HUD renders for the simulator mode:
@@ -19,5 +19,9 @@ public record SimStatus(
         float stepSettleS,    // time to stay within +/-5% band
         boolean noise,        // sensor-noise injection enabled
         float altitude,       // current altitude (m)
-        float altSetpoint) {  // commanded altitude (m)
+        float altSetpoint,    // commanded altitude (m)
+        float[] gainMin,      // per-gain slider minimum
+        float[] gainMax,      // per-gain slider maximum
+        String[] presetNames, // available preset labels
+        int currentPreset) {  // active preset index, or -1 if custom
 }

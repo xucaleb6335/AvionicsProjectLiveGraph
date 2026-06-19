@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.kagenou.Avionics</groupId>
+    <groupId>com.kagenou.avionics</groupId>
     <artifactId>AvionicsProjectLiveGraph</artifactId>
     <version>1.0-SNAPSHOT</version>
 
@@ -14,6 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lwjgl.version>3.3.6</lwjgl.version>
         <lwjgl.natives>natives-windows</lwjgl.natives>
+        <junit.version>5.10.0</junit.version>
     </properties>
 
 
@@ -23,6 +24,13 @@
                 <groupId>org.lwjgl</groupId>
                 <artifactId>lwjgl-bom</artifactId>
                 <version>${lwjgl.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -76,6 +84,13 @@
             <artifactId>jSerialComm</artifactId>
             <version>2.11.2</version>
         </dependency>
+
+        <!-- Testing (headless physics/control logic) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -86,6 +101,15 @@
                     <source>24</source>
                     <target>24</target>
                     <compilerArgs>--enable-preview</compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <!-- preview-compiled classes require the flag at test runtime -->
+                    <argLine>--enable-preview</argLine>
                 </configuration>
             </plugin>
         </plugins>
