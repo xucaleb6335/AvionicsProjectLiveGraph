@@ -1,5 +1,7 @@
 # Avionics Visualizer & Flight-Controller Simulator
 
+TL;DR this is a simulator and work environment for me to prototype my quadcopters
+
 A real-time 3D attitude visualizer and cascaded-PID flight-controller workbench, written in
 Java with LWJGL/OpenGL. It renders vehicle orientation live from an IMU over serial, and
 includes a physics-based quad simulator for designing and tuning the motor-control loops.
